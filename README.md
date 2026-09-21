@@ -1,133 +1,133 @@
 <p align="center">
-  <a href="https://tapetide.com/mcp">
-    <img src="https://assets.tapetide.com/logo-filled-tight.svg" alt="Tapetide — Indian Stock Market MCP Server" width="80" />
-  </a>
+  <img src="logo.png" alt="MyFinancial Market Data MCP" width="120" />
 </p>
 
-<h1 align="center">NSE & BSE Indian Stock Market Data MCP Server</h1>
+<h1 align="center">MyFinancial Market Data MCP</h1>
 
 <p align="center">
-  <strong>The Model Context Protocol server for Indian stock markets — 52 tools to search, screen & analyze all 8,200+ NSE and BSE stocks from Claude, ChatGPT, Cursor & any AI assistant</strong>
+  <strong>NSE & BSE stock market data inside Claude and any MCP client: 55 tools for quotes, financials, screeners, FII/DII flows, option chains and company filings. MyFinancial edition, powered by Tapetide.</strong>
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/tapetide-mcp"><img src="https://img.shields.io/npm/v/tapetide-mcp" alt="npm version" /></a>
-  <a href="https://www.npmjs.com/package/tapetide-mcp"><img src="https://img.shields.io/npm/dm/tapetide-mcp" alt="npm downloads" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License" /></a>
   <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-compatible-blue" alt="MCP compatible" /></a>
-  <a href="https://glama.ai/mcp/servers/Tapetide-hq/nse-bse-indian-stock-market-data-mcp"><img src="https://glama.ai/mcp/servers/Tapetide-hq/nse-bse-indian-stock-market-data-mcp/badges/score.svg" alt="nse-bse-indian-stock-market-data-mcp MCP server" /></a>
+  <a href="https://tapetide.com"><img src="https://img.shields.io/badge/data-Tapetide-0b0b0b" alt="Data by Tapetide" /></a>
 </p>
 
 <p align="center">
-  <a href="https://tapetide.com/mcp">Documentation</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#tools">52 Tools</a> •
-  <a href="#example-prompts">Example Prompts</a> •
-  <a href="https://www.npmjs.com/package/tapetide-mcp">npm</a>
+  <a href="#quick-start">Quick start</a> •
+  <a href="#tools">55 tools</a> •
+  <a href="#example-prompts">Example prompts</a> •
+  <a href="#credits--disclaimer">Credits & disclaimer</a>
 </p>
 
 ---
 
+> ⚠️ **Not investment advice.** Everything this server returns (quotes, financials, screens, Tapetide
+> Scores) is third-party data from Tapetide, for research and education. It is not a recommendation or
+> solicitation by MyFinancial. Investments in securities market are subject to market risks. Read all
+> the related documents carefully before investing.
+
 ## What is this?
 
-Tapetide MCP Server is a [Model Context Protocol](https://modelcontextprotocol.io/) server that connects AI assistants to real-time Indian stock market data. It covers all ~8,200 stocks listed on NSE and BSE — from large-cap Nifty 50 to SME stocks.
+MyFinancial Market Data MCP connects AI assistants to live data on all ~8,200 NSE and BSE listed stocks
+through the [Model Context Protocol](https://modelcontextprotocol.io/). Ask Claude to look up a stock, run
+a 326-ratio fundamental screen or a technical scan, pull quarterly results, read a concall transcript, or
+check FII/DII flows and the NIFTY option chain, all in plain English.
 
-Ask your AI to look up any stock, run a screener with 326 fundamental filters or real-time technical indicators, pull quarterly financials, check analyst consensus ratings, track your portfolio P&L, monitor FII/DII institutional flows, or get today's bulk deals — all through natural language.
+It is MyFinancial's fork of Tapetide's open-source bridge,
+[Tapetide-hq/nse-bse-indian-stock-market-data-mcp](https://github.com/Tapetide-hq/nse-bse-indian-stock-market-data-mcp)
+(MIT). The fork changes how the server presents itself. The tools and the data are Tapetide's:
 
-**Compatible with:** Claude Desktop, Claude Code, ChatGPT, Cursor, Windsurf, Kiro, VS Code, Codex, Zed, Gemini, Grok, OpenCode, Antigravity, and any MCP-compatible client.
+| | Comes from |
+|---|---|
+| Server name, title and instructions the client sees ("MyFinancial Market Data") | MyFinancial |
+| Guide tool title (`read_me` → "MyFinancial Market Data Guide") | MyFinancial |
+| Package, command, `MYFINANCIAL_*` settings, logs | MyFinancial |
+| Preview mode (runs without a token) | MyFinancial |
+| The 55 tools, their names, and every result they return (passed through unchanged) | Tapetide |
+| Tapetide Score (`get_tapetide_score`, `screen_tapetide_scores`), which keeps Tapetide's name because the rating is theirs | Tapetide |
+| Account, token, quota and rate limits | Your Tapetide account |
 
-## Quick Start
+## Quick start
 
-### Option 1: Remote MCP (No install — claude.ai, chatgpt.com, Grok, Gemini)
+**You need** Node.js 18+ and a free Tapetide token (starts with `tpt_rt_`) from
+[tapetide.com/settings/tokens](https://tapetide.com/settings/tokens).
 
-Add this URL directly in your AI chat app:
+### 1. Build
 
+```bash
+git clone https://github.com/myfinancialria/myfinancial-mcp.git
+cd myfinancial-mcp
+npm install && npm run build
 ```
-https://mcp.tapetide.com/mcp
+
+### 2. Connect it to your AI client
+
+**Claude Code** (available in every project; run from the repo folder):
+
+```bash
+claude mcp add myfinancial --scope user -e MYFINANCIAL_TOKEN=tpt_rt_your_token -- node "$PWD/dist/index.js"
 ```
 
-Authentication happens automatically via Google OAuth. No token needed.
-
-### Option 2: Remote MCP with Token (Claude Code, VS Code, Kiro, Zed)
-
-For code editors that support URL-based MCP servers with custom headers:
-
-1. Get a free token at [tapetide.com/settings/tokens](https://tapetide.com/settings/tokens)
-2. Add to your MCP config:
+**Claude Desktop:** Settings → Developer → Edit Config, then add to `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
-    "tapetide": {
-      "type": "url",
-      "url": "https://mcp.tapetide.com/mcp",
-      "headers": {
-        "Authorization": "Bearer YOUR_TOKEN_HERE"
-      }
+    "myfinancial": {
+      "command": "node",
+      "args": ["/absolute/path/to/myfinancial-mcp/dist/index.js"],
+      "env": { "MYFINANCIAL_TOKEN": "tpt_rt_your_token" }
     }
   }
 }
 ```
 
-### Option 3: Local MCP via npm (Claude Code, Codex, Cursor, Windsurf, VS Code, Gemini CLI, Kiro, OpenCode)
+**This folder as a project:** the repo includes a `.mcp.json`, so opening the folder in Claude Code offers
+the `myfinancial` server automatically. It reads `MYFINANCIAL_TOKEN` from your environment, and starts in
+preview mode if the token isn't set.
 
-For stdio-based MCP clients. No cloning or building required — runs via `npx`:
+Cursor, VS Code, Windsurf and other stdio clients take the same `command` / `args` / `env` block.
 
-1. Get a free token at [tapetide.com/settings/tokens](https://tapetide.com/settings/tokens)
-2. Add to your MCP config:
+### 3. Check it
 
-```json
-{
-  "mcpServers": {
-    "tapetide": {
-      "command": "npx",
-      "args": ["-y", "tapetide-mcp"],
-      "env": {
-        "TAPETIDE_TOKEN": "your_token_here"
-      }
-    }
-  }
-}
+```bash
+MYFINANCIAL_TOKEN=tpt_rt_your_token npm run smoke
 ```
 
-> **Node.js 18+** required for the local option. Run `node --version` to check.
+Leave the token out to check preview mode instead. Then ask your assistant: *"Use myfinancial to search for Reliance."*
 
-## How It Works
+### Preview mode
+
+Upstream exits at startup when there's no token, so the server just shows as failed. This fork starts
+anyway: the client sees all 55 tools, and each tool call returns the steps to activate instead of data.
+Add the token and restart the client to go live.
+
+## How it works
 
 ```
-┌─────────────────┐     stdio (JSON-RPC)     ┌──────────────────┐     HTTPS      ┌─────────────────────┐
-│  AI Assistant   │ ◄──────────────────────► │  tapetide-mcp    │ ◄────────────► │  mcp.tapetide.com   │
-│  (Claude, etc.) │                           │  (npm package)   │                │  (Cloudflare Worker) │
-└─────────────────┘                           └──────────────────┘                └─────────────────────┘
+┌─────────────────┐  stdio (JSON-RPC)  ┌──────────────────────────┐   HTTPS   ┌─────────────────────┐
+│  AI assistant   │ ◄────────────────► │  myfinancial-mcp         │ ◄───────► │  mcp.tapetide.com   │
+│ (Claude, etc.)  │                    │  (this repo, local)      │           │  (Tapetide's tools) │
+└─────────────────┘                    └──────────────────────────┘           └─────────────────────┘
 ```
 
-The npm package is a lightweight stdio bridge with zero runtime dependencies. It:
+A single-file TypeScript stdio bridge with zero runtime dependencies. It:
 
-- Reads JSON-RPC from stdin, forwards to the remote Tapetide MCP server, writes responses to stdout
-- Auto-detects framing: Content-Length (VS Code, Claude Desktop) or newline-delimited JSON (Kiro, Claude Code)
-- Exchanges your refresh token for a 1-hour HMAC access token, auto-refreshes before expiry
-- Handles SSE responses from the remote server
-- Identifies your MCP client to the remote via `User-Agent`, and echoes the negotiated protocol version
-- Warns on stderr when the server rate-limits a call, naming the retry delay
+- Reads JSON-RPC from stdin, forwards it to Tapetide's remote MCP server and writes the reply to stdout
+- Auto-detects framing: Content-Length (VS Code, Claude Desktop) or newline-delimited JSON (Claude Code, Kiro)
+- Exchanges your refresh token for a 1-hour access token and refreshes it before expiry
+- Re-brands the `initialize` and `tools/list` replies, and passes every other reply through unchanged
+- Tells Tapetide which client is calling via `User-Agent` (`myfinancial-mcp/1.0.0 (claude-code/…)`)
+- Warns on stderr when Tapetide rate-limits a call
 
-All 52 tools and their logic run on the remote server — the npm package is just the transport layer.
-Because it forwards JSON-RPC verbatim, tools shipped on the remote are available immediately without
-upgrading this package.
-
-## Authentication
-
-| Method | How it works | Best for |
-|--------|-------------|----------|
-| **Google OAuth** | Browser sign-in, automatic token refresh | AI chat apps (Claude.ai, ChatGPT, Grok, Gemini) |
-| **Personal Token (remote)** | `Authorization: Bearer tpt_rt_...` header | Code editors with URL-based MCP (VS Code, Kiro, Zed) |
-| **Personal Token (local)** | `TAPETIDE_TOKEN` env var via npx | stdio MCP clients (Cursor, Windsurf, Claude Desktop, Codex) |
-
-Generate a free personal token at [tapetide.com/settings/tokens](https://tapetide.com/settings/tokens). Works for both remote and local MCP.
+Tools run on Tapetide's server, so new ones show up without updating this repo.
 
 ## Tools
 
-> Tip: ask your assistant to call `read_me` first. It returns the full in-session guide — every
-> tool by category, usage patterns, and the rules the server expects clients to follow.
+> Tip: ask your assistant to call `read_me` first (shown as "MyFinancial Market Data Guide"). It returns
+> the full in-session guide: every tool by category, and the usage rules the server expects.
 
 <!-- tools:start — mirrors the server's tool catalog. Checked against the live server's tools/list by
      scripts/check-catalog-parity.mjs (CI: .github/workflows/ci.yml). When the catalog changes,
@@ -188,9 +188,17 @@ Generate a free personal token at [tapetide.com/settings/tokens](https://tapetid
 | Tool | Description |
 |------|-------------|
 | `get_stock_deals` | Bulk, block, insider, and substantial-acquisition (SAST) disclosures per stock, with counterparty, side, quantity, value. |
-| `get_tapetide_score` | The deterministic 0-100 Tapetide Score for one stock with its six pillar sub-scores, band, percentile, data confidence, and any governance caps or red flags. |
-| `screen_tapetide_scores` | Rank and filter the scored universe by band, size bucket, sector, score window, and confidence, with cursor pagination. |
+| `get_tapetide_score` | Tapetide's deterministic 0-100 Tapetide Score for one stock with its six pillar sub-scores, band, percentile, data confidence, and any governance caps or red flags. |
+| `screen_tapetide_scores` | Rank and filter Tapetide's scored universe by band, size bucket, sector, score window, and confidence, with cursor pagination. |
 | `get_earnings_call_summary` | Structured digest of recent earnings-call transcripts and investor presentations — highlights, risks, guidance, headline metrics. |
+
+### 📄 Filings & Documents (3 tools)
+
+| Tool | Description |
+|------|-------------|
+| `list_company_documents` | Index of a company's filings parsed to text — concall transcripts, annual reports, presentations, IPO documents — with doc IDs, periods, page counts, and links to the PDF and Markdown. Call first. |
+| `get_document_summary` | Investor digest of one parsed filing — summary, highlights, risks, guidance, key metrics — by doc ID, or the newest of a document type. |
+| `read_document` | Markdown text of a parsed filing by page range, with page markers to cite. Up to 12 pages per call; annual reports run 100-400 pages. |
 
 ### ⏳ Point-in-Time & Backtest Safety (5 tools)
 
@@ -204,7 +212,7 @@ Generate a free personal token at [tapetide.com/settings/tokens](https://tapetid
 
 ### 💼 Portfolio (4 tools)
 
-Requires a connected Tapetide account.
+Stored in your Tapetide account.
 
 | Tool | Description |
 |------|-------------|
@@ -215,7 +223,7 @@ Requires a connected Tapetide account.
 
 ### 👁️ Watchlist (3 tools)
 
-Requires a connected Tapetide account.
+Stored in your Tapetide account.
 
 | Tool | Description |
 |------|-------------|
@@ -227,7 +235,7 @@ Requires a connected Tapetide account.
 
 | Tool | Description |
 |------|-------------|
-| `read_me` | The full in-session guide — every tool by category, the SEBI disclaimer rule, portfolio-first behaviour, parallel-call patterns. Assistants should call it first. |
+| `read_me` | The full in-session guide ("MyFinancial Market Data Guide") — every tool by category, the SEBI disclaimer rule, portfolio-first behaviour, parallel-call patterns. Assistants should call it first. |
 | `scan_movers` | Alias of `get_trending_stocks`. |
 | `get_live_quote` | Alias of `get_stock_quote`. |
 | `get_stock_news` | Alias of `get_stock_events` with `type: "news"`. |
@@ -238,8 +246,8 @@ Requires a connected Tapetide account.
 
 ### Retired tool names
 
-These names were removed. Calling one returns a message naming its replacement, so a client can
-recover in the same turn — but new integrations should use the replacement directly.
+Tapetide removed these. Calling one returns a message naming its replacement, so a client can recover in
+the same turn, but new integrations should use the replacement directly.
 
 | Retired | Replacement |
 |---------|-------------|
@@ -253,107 +261,53 @@ recover in the same turn — but new integrations should use the replacement dir
 | `get_quant_signal` | `get_tapetide_score` (a different measurement, not a rename) |
 | `screen_by_quant_signal` | `screen_tapetide_scores` (a different measurement, not a rename) |
 
-## Example Prompts
+## Example prompts
 
-### Stock Research
+**Company research**
 
 ```
-"Give me a complete analysis of Reliance Industries — financials, debt trend,
- analyst target price, and what mutual funds are holding it"
+"Give me a complete picture of Reliance Industries — financials, debt trend,
+ analyst targets, and which mutual funds hold it"
 
 "Compare HDFC Bank and ICICI Bank — quarterly profit growth, ROE, shareholding
  changes, and analyst consensus"
 
-"Pull the last 4 quarters of TCS financials — revenue growth, margin trend,
- and cash flow. How does it compare to Infosys?"
+"Summarise TCS's latest concall — guidance, risks, and what management said
+ about margins"
 ```
 
-### Stock Screening
+**Screening**
 
 ```
-"Find mid-cap stocks where FII holding increased last quarter, ROE > 15%,
- and RSI below 40 — accumulation candidates"
-
-"Screen for stocks with MACD bullish crossover, volume 2x average, and
- within 10% of 52-week high"
+"Find mid-caps where FII holding rose last quarter, ROE > 15% and RSI below 40"
 
 "Which small-caps have debt-to-equity below 0.5, operating margin above 20%,
  and PE below 15?"
 ```
 
-### Institutional Flows
+**Flows, derivatives and the market**
 
 ```
-"FIIs have been selling for 5 days — show me daily numbers and which sectors
- they're pulling out of"
+"FIIs have sold for 5 days — show the daily numbers and the sectors they're leaving"
 
-"Compare FII vs DII flows for the last month with Nifty 50 PE — are we near
- a historical bottom?"
+"Show the NIFTY option chain around ATM — OI by strike, max pain and PCR"
 
-"Show F&O participant-wise open interest — are FIIs net long or short in
- index futures?"
+"Is the market expensive? Nifty 50 PE against its 5- and 10-year averages"
+
+"Full market briefing — FII/DII flows, F&O ban list, bulk deals above ₹50 crore,
+ top delivery stocks and breakout signals"
 ```
 
-### Portfolio & Watchlist
+**Risk and backtest checks**
 
 ```
-"Add these to my portfolio: 10 RELIANCE at ₹1350, 50 TCS at ₹3800,
- 25 HDFCBANK at ₹1650"
+"Any governance red flags on this stock? Check promoter pledge and recent
+ credit rating actions"
 
-"I bought 10 more RELIANCE at ₹1400 — update my portfolio and show
- my new average cost"
-
-"Which of my holdings are technically weak? Show RSI and MACD for each"
-
-"Watch TATAMOTORS, MARUTI, M&M — compare their PE ratios and quarterly
- sales growth"
+"Was IDEA in the Nifty 500 on 2019-03-31? I need point-in-time membership"
 ```
 
-### Derivatives & Volatility
-
-```
-"Is RELIANCE implied volatility high right now? Show IV rank and percentile
- versus realised vol over the last year"
-
-"Show the NIFTY option chain around ATM — open interest by strike, max pain,
- and the put-call ratio"
-
-"Which sectors led the last 3 completed weeks? Rank the sectoral indices"
-```
-
-### Scoring & Risk Screens
-
-```
-"What's the Tapetide Score for TATASTEEL and why — break down the pillars"
-
-"Show me Strong-band pharma stocks among large and mid caps"
-
-"Any governance red flags on this stock? Check promoter pledge trend and
- recent credit rating actions"
-```
-
-### Backtest Safety
-
-```
-"Was IDEA in the Nifty 500 on 2019-03-31? I need point-in-time membership,
- not today's list"
-
-"This stock shows a 60% single-day move in 2022 — was that a split or a real
- return? Check the adjustment factors"
-```
-
-### Daily Market Briefing
-
-```
-"Full market briefing — FII/DII flows, F&O ban stocks, bulk deals above
- 50 crores, top delivery stocks, and breakout signals"
-
-"Is the market overvalued? Show Nifty 50 PE vs 5-year and 10-year averages"
-
-"Show the Nifty 50 heatmap — which sectors dragged the index today?"
-```
-
-## Data Coverage
+## Data coverage
 
 | Category | What's included |
 |----------|----------------|
@@ -364,80 +318,85 @@ recover in the same turn — but new integrations should use the replacement dir
 | **Technicals** | RSI, SMA, EMA, MACD, Bollinger Bands, ADX, ATR, Supertrend, Stochastic, CCI, pivot points, 8 candlestick patterns |
 | **Institutional** | FII/DII daily cash flows, F&O participant OI, FPI sector-wise allocation, buy/sell streaks |
 | **Market data** | Bulk/block deals, F&O ban, IPOs, delivery %, MTF, SLBM, heatmaps, signals |
-| **Indices** | ~140 NSE indices — level history with PE/PB/DY, plus weekly/monthly return rankings by sector, broad, thematic, and strategy family |
-| **Derivatives** | Index option chains with IV and full Greeks, OI, max pain, PCR; IV rank/percentile and realised-vol history for ~556 underlyings including single stocks; India VIX |
+| **Indices** | ~140 NSE indices — level history with PE/PB/DY, plus weekly/monthly return rankings |
+| **Derivatives** | Index option chains with IV and full Greeks, OI, max pain, PCR; IV rank/percentile and realised-vol history for ~556 underlyings; India VIX |
 | **Analyst** | Buy/hold/sell consensus + EPS/revenue/EBITDA/ROE forecasts with actuals vs estimates |
 | **Ownership** | Shareholding patterns (quarterly), dividend history, mutual fund scheme-level holdings |
-| **Large trades** | Bulk, block, insider (designated-person), and SAST disclosures with counterparty and value |
+| **Filings** | Concall transcripts, annual reports, investor presentations and IPO documents, parsed to text with digests |
 | **Governance & risk** | Promoter share-pledge history and events, credit-rating actions by agency with outlook |
-| **Scoring** | Tapetide Score — deterministic 0-100 rating with six pillar sub-scores, band, percentile, data confidence, governance caps |
-| **Point-in-time** | Split/bonus adjustment factors, per-day observation status, as-of index membership, historical symbol/ISIN resolution — for survivorship-bias-aware backtests |
-| **News & Events** | Sentiment-tagged news, corporate actions, filings (annual reports, concall transcripts), AI digests of earnings calls and investor presentations |
+| **Scoring** | Tapetide Score — Tapetide's 0-100 rating with six pillar sub-scores, band, percentile, data confidence |
+| **Point-in-time** | Split/bonus adjustment factors, per-day observation status, as-of index membership, historical symbol/ISIN resolution |
 | **Portfolio** | Live P&L tracking, sector breakdown, broker CSV import (10+ Indian brokers) |
 
-## Environment Variables
+## Environment variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `TAPETIDE_TOKEN` | Yes (local) | — | Personal API token from [tapetide.com/settings/tokens](https://tapetide.com/settings/tokens) |
-| `TAPETIDE_MCP_URL` | No | `https://mcp.tapetide.com` | Override remote server URL |
-| `TAPETIDE_DEBUG` | No | `0` | Set to `1` for debug logging to stderr |
+| `MYFINANCIAL_TOKEN` | For live data | none (preview mode) | Your Tapetide token from [tapetide.com/settings/tokens](https://tapetide.com/settings/tokens) |
+| `MYFINANCIAL_MCP_URL` | No | `https://mcp.tapetide.com` | Remote server URL |
+| `MYFINANCIAL_DEBUG` | No | `0` | Set to `1` to log each call's method, status and timing to stderr |
 
-## Rate Limits
+The upstream names `TAPETIDE_TOKEN`, `TAPETIDE_MCP_URL` and `TAPETIDE_DEBUG` still work. If both are set,
+the `MYFINANCIAL_` one wins.
 
-Limits are per Tapetide account and identical across all three access methods (OAuth, remote token,
-and this npm bridge) — they follow your plan, not your transport.
+## Rate limits
+
+Limits come from your Tapetide plan and are the same whichever way you connect.
 
 | Scope | Free plan | Paid plans |
 |-------|-----------|------------|
 | Per day | 50 tool calls | Per your plan |
-| Per calendar month | 1,000 tool calls | Per your plan (unlimited on enterprise) |
+| Per calendar month | 1,000 tool calls | Per your plan |
 | Burst | 60 tool calls per minute | 60 tool calls per minute |
 
-Only **successful tool calls** consume quota. Protocol traffic (`initialize`, `tools/list`) and
-burst-denied calls are free. Daily and monthly windows reset on IST boundaries.
-
-When a limit is hit, the server replies with a normal JSON-RPC result carrying `isError: true` and a
-message naming the binding cap and its reset time, so your assistant relays it instead of retrying.
-Responses carry `X-RateLimit-Reset`, and denials add `Retry-After`. The numeric quota itself is not
-exposed as a header — check current usage at
+Only successful tool calls count. `initialize`, `tools/list` and denied calls are free, and preview mode
+never touches your quota. Daily and monthly windows reset on IST boundaries. When you hit a limit, the tool
+result says which cap applied and when it resets. Check usage at
 [tapetide.com/settings/tokens](https://tapetide.com/settings/tokens).
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| `TAPETIDE_TOKEN environment variable is required` | Add your token to the `env` section of your MCP config |
-| `Token refresh failed (401)` | Token expired. Generate a new one at [tapetide.com/settings/tokens](https://tapetide.com/settings/tokens) |
-| `Rate limit exceeded` | Wait for reset (shown in error) or check usage at [tapetide.com/settings/tokens](https://tapetide.com/settings/tokens) |
-| Server not responding | Ensure Node.js 18+ is installed (`node --version`) |
-| Slow first request | Normal — pre-authenticates on startup. Subsequent requests are fast |
-| Network errors | Check internet. The bridge needs to reach `mcp.tapetide.com` |
+| Problem | Fix |
+|---------|-----|
+| Tool calls say "preview mode" | The token isn't reaching the server. Put `MYFINANCIAL_TOKEN` in the server's `env` block and restart the client |
+| `Failed to authenticate` / `Token refresh failed (401)` | The token is wrong or revoked. Create a new one at [tapetide.com/settings/tokens](https://tapetide.com/settings/tokens) |
+| Rate limit message | Wait for the reset time given in the message, or check usage on Tapetide |
+| Server won't start | Check `node --version` is 18+, and that you ran `npm run build` (clients run `dist/index.js`) |
+| Network errors | The bridge has to reach `mcp.tapetide.com` |
 
-Set `TAPETIDE_DEBUG=1` for detailed logging to stderr.
+Set `MYFINANCIAL_DEBUG=1` for per-call logging on stderr.
 
-## Links
+## Keeping up with upstream
 
-- **[tapetide.com](https://tapetide.com)** — Web platform
-- **[tapetide.com/mcp](https://tapetide.com/mcp)** — MCP documentation & setup guide
-- **[mcp.tapetide.com](https://mcp.tapetide.com)** — Remote MCP endpoint
-- **[npm: tapetide-mcp](https://www.npmjs.com/package/tapetide-mcp)** — npm package
-- **[@tapetide_hq](https://x.com/tapetide_hq)** — X (Twitter)
-- **[GitHub](https://github.com/Tapetide-hq/nse-bse-indian-stock-market-data-mcp)** — Source code
-- **[Glama](https://glama.ai/mcp/servers/Tapetide-hq/nse-bse-indian-stock-market-data-mcp)** — MCP directory listing
+Tapetide's bridge changes rarely, and `src/index.ts` keeps its structure so merges stay small:
 
-<a href="https://glama.ai/mcp/servers/Tapetide-hq/nse-bse-indian-stock-market-data-mcp"><img width="380" src="https://glama.ai/mcp/servers/Tapetide-hq/nse-bse-indian-stock-market-data-mcp/badges/card.svg" alt="nse-bse-indian-stock-market-data-mcp MCP server" /></a>
+```bash
+git remote add upstream https://github.com/Tapetide-hq/nse-bse-indian-stock-market-data-mcp.git  # once
+git fetch upstream && git merge upstream/main
+npm run build && npm run smoke && npm run check:catalog
+```
 
-## Contributing
+`npm run check:catalog` compares the tool list in this README with the live server, so you'll know when
+Tapetide adds or retires a tool.
 
-Issues and pull requests are welcome. For bugs, include the error message and your MCP client name/version.
+## Credits & disclaimer
+
+- **Data and tools: [Tapetide](https://tapetide.com).** Use is governed by
+  [Tapetide's Terms of Use](https://tapetide.com/terms): use your own token, don't share or publish it,
+  and don't redistribute or resell the data, or build a competing data service on it, without Tapetide's
+  permission. Tapetide states that it is not a SEBI-registered investment adviser, research analyst or broker.
+- **Original bridge:** [Tapetide-hq/nse-bse-indian-stock-market-data-mcp](https://github.com/Tapetide-hq/nse-bse-indian-stock-market-data-mcp),
+  MIT licensed. This fork keeps Tapetide's copyright notice.
+- **Not investment advice.** Output is for information and research only. It is not a recommendation by
+  MyFinancial, and the Tapetide Score is Tapetide's methodology, not a MyFinancial rating. Investments in
+  securities market are subject to market risks. Read all the related documents carefully before investing.
 
 ## License
 
-[MIT](./LICENSE) — free to use, modify, and distribute.
+[MIT](./LICENSE). Original bridge © 2025 Tapetide; MyFinancial modifications © 2026 MyFinancial.
 
 ---
 
 <p align="center">
-  <sub>Built by <a href="https://tapetide.com">Tapetide</a> — India's AI-first stock research platform</sub>
+  <sub>MyFinancial edition · data by <a href="https://tapetide.com">Tapetide</a></sub>
 </p>

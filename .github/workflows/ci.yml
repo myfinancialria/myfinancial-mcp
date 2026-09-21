@@ -26,6 +26,8 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm run build
+      # Preview mode: checks the branded handshake and the live catalog, no token needed.
+      - run: npm run smoke
 
   catalog-parity:
     name: README matches live tool catalog

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "myfinancial": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "MYFINANCIAL_TOKEN": "${MYFINANCIAL_TOKEN:-}"
+      }
+    }
+  }
+}

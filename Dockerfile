@@ -1,11 +1,10 @@
-# Dockerfile for Glama MCP server introspection / release build.
-# Builds the TypeScript stdio bridge and runs it.
+# Dockerfile for MyFinancial Market Data MCP.
+# Builds the TypeScript stdio bridge and runs it. Pass your Tapetide token as
+# MYFINANCIAL_TOKEN (free at https://tapetide.com/settings/tokens); without it
+# the bridge starts in preview mode (tool catalog only).
 #
-# Glama starts this container and sends an MCP introspection request
-# (initialize + tools/list) over stdio. The bridge forwards to the remote
-# Tapetide MCP server, so a TAPETIDE_TOKEN must be provided as an env var
-# on the Glama Dockerfile admin page (get one free at
-# https://tapetide.com/settings/tokens).
+#   docker build -t myfinancial-mcp .
+#   docker run -i --rm -e MYFINANCIAL_TOKEN=tpt_rt_... myfinancial-mcp
 
 FROM node:20-alpine AS build
 WORKDIR /app

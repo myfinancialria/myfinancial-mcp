@@ -1,19 +1,21 @@
 {
-  "name": "tapetide-mcp",
-  "version": "1.0.7",
-  "mcpName": "com.tapetide/stock-research-mcp",
-  "description": "NSE BSE Indian stock market MCP server — 52 tools for Indian stock market data & research: live NSE/BSE quotes, financials, technicals, stock screener (326 ratios), analyst ratings, FII/DII flows, option chains & IV, index performance, IPOs, portfolio tracking & watchlist. Works with Claude, ChatGPT, Cursor, Kiro, Codex & any MCP client.",
+  "name": "myfinancial-mcp",
+  "version": "1.0.0",
+  "description": "MyFinancial Market Data MCP: NSE & BSE Indian stock market data for Claude and any MCP client, powered by Tapetide. 55 tools: live quotes, financials, technicals, 326-ratio screener, FII/DII flows, option chains & IV, company filings, IPOs, portfolio & watchlist.",
   "type": "module",
   "bin": {
-    "tapetide-mcp": "dist/index.js"
+    "myfinancial-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js",
+    "smoke": "node scripts/smoke-test.mjs",
     "check:catalog": "node scripts/check-catalog-parity.mjs",
     "prepublishOnly": "tsc"
   },
   "keywords": [
+    "myfinancial",
     "mcp",
     "mcp-server",
     "nse-mcp",
@@ -70,13 +72,16 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tapetide-hq/nse-bse-indian-stock-market-data-mcp.git"
+    "url": "git+https://github.com/myfinancialria/myfinancial-mcp.git"
   },
-  "homepage": "https://tapetide.com/mcp",
+  "homepage": "https://github.com/myfinancialria/myfinancial-mcp#readme",
   "bugs": {
-    "url": "https://github.com/Tapetide-hq/nse-bse-indian-stock-market-data-mcp/issues"
+    "url": "https://github.com/myfinancialria/myfinancial-mcp/issues"
   },
-  "author": "Tapetide <hello@tapetide.com> (https://tapetide.com)",
+  "author": "MyFinancial (https://github.com/myfinancialria)",
+  "contributors": [
+    "Tapetide <hello@tapetide.com> (https://tapetide.com) — original tapetide-mcp bridge"
+  ],
   "files": [
     "dist",
     "README.md",

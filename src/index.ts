@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Tapetide Stock Research MCP Server — Local stdio bridge to the remote MCP server.
+ * MyFinancial Market Data MCP Server — MyFinancial-branded stdio bridge to the
+ * Tapetide remote MCP server. Fork of Tapetide-hq/nse-bse-indian-stock-market-data-mcp.
  *
  * Reads JSON-RPC from stdin, forwards to https://mcp.tapetide.com/mcp
  * with HMAC access token auth, writes responses to stdout.
@@ -14,21 +15,30 @@
  *   negotiated protocol version on every request, so the remote's stateless
  *   transport can attribute calls instead of seeing an anonymous bridge.
  *
+ * Branding:
+ *   MCP clients see "MyFinancial Market Data" (server info, instructions, guide
+ *   title). Tool names and every tool result pass through untouched: the data
+ *   and the Tapetide Score are Tapetide's, and stay attributed to Tapetide.
+ *
  * Authentication:
- *   1. Uses TAPETIDE_TOKEN (refresh token) from env
+ *   1. Uses MYFINANCIAL_TOKEN (or TAPETIDE_TOKEN), a Tapetide refresh token, from env
  *   2. Exchanges for 1hr HMAC access token via POST /token
  *   3. Auto-refreshes when access token expires
+ *   Without a token it runs in preview mode (see previewReply).
  *
- * Get a token at https://tapetide.com/settings/tokens
- *
- * Design Log #035
+ * Get a free token at https://tapetide.com/settings/tokens
  */
 
 import { createRequire } from "node:module";
 
-const MCP_URL = process.env.TAPETIDE_MCP_URL || "https://mcp.tapetide.com";
-const REFRESH_TOKEN = process.env.TAPETIDE_TOKEN;
-const DEBUG = process.env.TAPETIDE_DEBUG === "1";
+/** MYFINANCIAL_* wins; the upstream TAPETIDE_* names keep working so existing configs carry over. */
+function setting(name: string): string | undefined {
+  return process.env[`MYFINANCIAL_${name}`] || process.env[`TAPETIDE_${name}`] || undefined;
+}
+
+const MCP_URL = setting("MCP_URL") || "https://mcp.tapetide.com";
+const REFRESH_TOKEN = setting("TOKEN");
+const DEBUG = setting("DEBUG") === "1";
 
 /**
  * Our own version, read from the package manifest rather than duplicated as a
@@ -45,14 +55,6 @@ const BRIDGE_VERSION: string = (() => {
     return "unknown";
   }
 })();
-
-if (!REFRESH_TOKEN) {
-  process.stderr.write(
-    "Error: TAPETIDE_TOKEN environment variable is required.\n" +
-      "Get one at https://tapetide.com/settings/tokens\n",
-  );
-  process.exit(1);
-}
 
 // ── Auth ──────────────────────────────────────────────────────────────
 
@@ -127,17 +129,18 @@ function sanitizeForHeader(value: string): string {
 }
 
 function userAgent(): string {
-  const self = `tapetide-mcp/${BRIDGE_VERSION}`;
+  const self = `myfinancial-mcp/${BRIDGE_VERSION}`;
   return downstreamClient ? `${self} (${downstreamClient})` : self;
 }
 
-function remoteHeaders(token: string): Record<string, string> {
+function remoteHeaders(token: string | null): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json, text/event-stream",
     "User-Agent": userAgent(),
-    Authorization: `Bearer ${token}`,
   };
+  // Preview mode has no token; the one call it forwards (tools/list) is public upstream.
+  if (token) headers.Authorization = `Bearer ${token}`;
   if (negotiatedProtocolVersion) {
     headers["MCP-Protocol-Version"] = negotiatedProtocolVersion;
   }
@@ -196,8 +199,59 @@ function warnOnRateLimit(res: Response): void {
   );
 }
 
+// ── MyFinancial branding ──────────────────────────────────────────────
+
+const SERVER_INFO = { name: "myfinancial-mcp", title: "MyFinancial Market Data" };
+
+const BRAND_INSTRUCTIONS =
+  "MyFinancial Market Data: NSE & BSE stock market data, powered by Tapetide. " +
+  "Quotes, financials, screens and Tapetide Scores are third-party data from Tapetide: " +
+  "attribute them as such, and never present them as MyFinancial's recommendations or advice.";
+
+const ACTIVATION_STEPS =
+  "MyFinancial Market Data is in preview mode: it can list its tools but cannot fetch data yet. " +
+  "To activate it: (1) create a free token at https://tapetide.com/settings/tokens (it starts with tpt_rt_), " +
+  "(2) set it as MYFINANCIAL_TOKEN in this server's MCP config, (3) restart the MCP client.";
+
+/**
+ * Display titles we override. Only titles change: names are the remote's API,
+ * and the Tapetide Score tools keep Tapetide's name because the score is theirs.
+ */
+const TOOL_TITLES = new Map([["read_me", "MyFinancial Market Data Guide"]]);
+
+/**
+ * Re-brand what an MCP client shows about the server. Only `initialize` and
+ * `tools/list` results are touched; every other response, including every tool
+ * result, is returned exactly as the remote sent it.
+ */
+function brandResponse(method: string | undefined, text: string): string {
+  if (method !== "initialize" && method !== "tools/list") return text;
+  try {
+    const msg = JSON.parse(text) as {
+      result?: { serverInfo?: object; instructions?: unknown; tools?: { name?: string; title?: string }[] };
+    };
+    const result = msg.result;
+    if (!result) return text;
+    if (method === "initialize") {
+      result.serverInfo = { ...result.serverInfo, ...SERVER_INFO, version: BRIDGE_VERSION };
+      result.instructions =
+        typeof result.instructions === "string"
+          ? `${BRAND_INSTRUCTIONS}\n\n${result.instructions}`
+          : BRAND_INSTRUCTIONS;
+    } else if (Array.isArray(result.tools)) {
+      for (const tool of result.tools) {
+        const title = tool.name && TOOL_TITLES.get(tool.name);
+        if (title) tool.title = title;
+      }
+    }
+    return JSON.stringify(msg);
+  } catch {
+    return text; // not JSON — pass through as-is
+  }
+}
+
 async function forwardToRemote(body: string): Promise<string> {
-  const token = await getAccessToken();
+  const token = REFRESH_TOKEN ? await getAccessToken() : null;
   const start = Date.now();
   let method: string | undefined;
   try { method = (JSON.parse(body) as { method?: string }).method; } catch { /* ignore */ }
@@ -212,7 +266,7 @@ async function forwardToRemote(body: string): Promise<string> {
   });
 
   // If 401, token may have expired between check and request. Retry once.
-  if (res.status === 401) {
+  if (res.status === 401 && token) {
     accessToken = null;
     const freshToken = await getAccessToken();
     res = await fetchWithTimeout(`${MCP_URL}/mcp`, {
@@ -230,7 +284,7 @@ async function forwardToRemote(body: string): Promise<string> {
     const result = extractJsonFromSSE(await res.text());
     if (method === "initialize") captureProtocolVersion(result);
     if (DEBUG) process.stderr.write(`[debug] ${method ?? "?"} → SSE ${res.status} (${Date.now() - start}ms)\n`);
-    return result;
+    return brandResponse(method, result);
   }
 
   const text = await res.text();
@@ -261,7 +315,7 @@ async function forwardToRemote(body: string): Promise<string> {
     });
   }
 
-  return text;
+  return brandResponse(method, text);
 }
 
 function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
@@ -291,6 +345,46 @@ function extractJsonFromSSE(sse: string): string {
     }
   }
   return lastValidJson || sse;
+}
+
+// ── Preview mode (no token) ───────────────────────────────────────────
+
+/**
+ * Upstream exits at startup without a token, which leaves the server listed as
+ * "failed" in the client with no hint why. Instead we answer the handshake
+ * locally and forward only tools/list (public upstream), so the whole catalog
+ * shows up and every tool call returns steps the assistant can relay.
+ */
+async function previewReply(line: string): Promise<string> {
+  const msg = JSON.parse(line) as { id?: unknown; method?: string; params?: { protocolVersion?: unknown } };
+  const reply = (result: unknown) => JSON.stringify({ jsonrpc: "2.0", id: msg.id ?? null, result });
+
+  switch (msg.method) {
+    case "initialize": {
+      captureClientInfo(line);
+      const requested = msg.params?.protocolVersion;
+      return reply({
+        // Echo the client's version: preview mode only speaks the handshake,
+        // tools/list and tools/call, which every protocol version shares.
+        protocolVersion: typeof requested === "string" ? requested : "2025-06-18",
+        capabilities: { tools: {} },
+        serverInfo: { ...SERVER_INFO, version: BRIDGE_VERSION },
+        instructions: `${BRAND_INSTRUCTIONS}\n\n${ACTIVATION_STEPS}`,
+      });
+    }
+    case "ping":
+      return reply({});
+    case "tools/list":
+      return forwardToRemote(line);
+    case "tools/call":
+      return reply({ content: [{ type: "text", text: ACTIVATION_STEPS }], isError: true });
+    default:
+      return JSON.stringify({
+        jsonrpc: "2.0",
+        id: msg.id ?? null,
+        error: { code: -32601, message: `Method not found: ${msg.method}` },
+      });
+  }
 }
 
 // ── Response writing ──────────────────────────────────────────────────
@@ -334,6 +428,7 @@ function isNotification(json: string): boolean {
 async function handleMessage(line: string, write: WriteFn): Promise<void> {
   // Forward notifications to remote but don't write a response back.
   if (isNotification(line)) {
+    if (!REFRESH_TOKEN) return; // preview mode: the handshake was local, nothing upstream to notify
     try {
       await forwardToRemote(line);
     } catch {
@@ -343,7 +438,7 @@ async function handleMessage(line: string, write: WriteFn): Promise<void> {
   }
 
   try {
-    const response = await forwardToRemote(line);
+    const response = REFRESH_TOKEN ? await forwardToRemote(line) : await previewReply(line);
     write(response);
   } catch (err) {
     let id: unknown = null;
@@ -362,25 +457,31 @@ async function handleMessage(line: string, write: WriteFn): Promise<void> {
 async function main(): Promise<void> {
   // Graceful shutdown.
   const shutdown = () => {
-    process.stderr.write("Tapetide Stock Research MCP shutting down.\n");
+    process.stderr.write("MyFinancial Market Data MCP shutting down.\n");
     process.exit(0);
   };
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
 
-  // Pre-authenticate so first request is fast.
-  try {
-    await refreshAccessToken();
-  } catch (err) {
+  if (REFRESH_TOKEN) {
+    // Pre-authenticate so first request is fast.
+    try {
+      await refreshAccessToken();
+    } catch (err) {
+      process.stderr.write(
+        `Error: Failed to authenticate. Check your MYFINANCIAL_TOKEN (a Tapetide token).\n${err}\n`,
+      );
+      process.exit(1);
+    }
     process.stderr.write(
-      `Error: Failed to authenticate. Check your TAPETIDE_TOKEN.\n${err}\n`,
+      `MyFinancial Market Data MCP v${BRIDGE_VERSION} connected (data by Tapetide). Waiting for requests...\n`,
     );
-    process.exit(1);
+  } else {
+    process.stderr.write(
+      `MyFinancial Market Data MCP v${BRIDGE_VERSION} started in preview mode: no MYFINANCIAL_TOKEN set, ` +
+        "so tools are listed but calls return setup steps. Get a free token at https://tapetide.com/settings/tokens\n",
+    );
   }
-
-  process.stderr.write(
-    `Tapetide Stock Research MCP v${BRIDGE_VERSION} connected. Waiting for requests...\n`,
-  );
 
   // Auto-detect framing from first chunk.
   // Content-Length framed starts with "Content-Length:", newline-delimited starts with "{".
